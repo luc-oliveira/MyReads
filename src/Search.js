@@ -19,14 +19,18 @@ class Search extends Component{
         const MAX_RESULTS = 20;
         BooksAPI.search(query, MAX_RESULTS)
         .then(searchedBooks => {
-            console.log(searchedBooks)
-            this.setState({books: searchedBooks})
+            this.setState({books: this.merge(searchedBooks, this.props.booksFromStands, "id")})
         })
     }
 
     handleSearch = ( book,shelf) => {
         if(this.props.onUpdateBook)
             this.props.onUpdateBook(book, shelf)
+    }
+
+    merge = (a, b, prop) => {
+        var reduced =  a.filter( aitem => ! b.find ( bitem => aitem[prop] === bitem[prop]) );
+        return reduced.concat(b.filter(bitem => a.find(aitem => aitem[prop] === bitem[prop])));
     }
 
     render(){

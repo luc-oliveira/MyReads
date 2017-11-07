@@ -35,7 +35,9 @@ class BooksApp extends React.Component {
             onUpdateBook={ (book, shelf) => {
               this.onUpdateBook(book,shelf)
               history.push('/')
-            }} /> 
+            }}
+            booksFromStands = {this.state.books} 
+          /> 
         )} />
         <Route exact path='/' render={() => (
           <ListBooks books={this.state.books} onUpdateBook={(book,shelf) => {this.onUpdateBook(book,shelf)}} /> 
