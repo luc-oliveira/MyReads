@@ -1,62 +1,81 @@
 import React, { Component } from 'react'
 import { Link } from 'react-router-dom'
+import { DebounceInput } from 'react-debounce-input';
 import * as BooksAPI from './BooksAPI'
 import ListBooks from './ListBooks'
 
 class Search extends Component{
-    state = {
-        query: '',
-        books:[]
+    constructor(props){
+        super(props);  
+
+        this.state = {
+            query: '',
+            books:[],
+            error: ''
+        }
+
+        this.updateQuery = this.updateQuery.bind(this);
     }
 
-    updateQuery = (query) => {
-        this.setState({ query: query.trim() });
-        const TERMS = ['Android', 'Art', 'Artificial Intelligence', 'Astronomy', 'Austen', 'Baseball', 'Basketball', 'Bhagat', 'Biography', 'Brief', 'Business', 'Camus', 'Cervantes', 'Christie', 'Classics', 'Comics', 'Cook', 'Cricket', 'Cycling', 'Desai', 'Design', 'Development', 'Digital Marketing', 'Drama', 'Drawing', 'Dumas', 'Education', 'Everything', 'Fantasy', 'Film', 'Finance', 'First', 'Fitness', 'Football', 'Future', 'Games', 'Gandhi', 'Homer', 'Horror', 'Hugo', 'Ibsen', 'Journey', 'Kafka', 'King', 'Lahiri', 'Larsson', 'Learn', 'Literary Fiction', 'Make', 'Manage', 'Marquez', 'Money', 'Mystery', 'Negotiate', 'Painting', 'Philosophy', 'Photography', 'Poetry', 'Production', 'Programming', 'React', 'Redux', 'River', 'Robotics', 'Rowling', 'Satire', 'Science Fiction', 'Shakespeare', 'Singh', 'Swimming', 'Tale', 'Thrun', 'Time', 'Tolstoy', 'Travel', 'Ultimate', 'Virtual Reality', 'Web Development', 'iOS'];
-        if (query && TERMS.includes(query) && (this.searchBoooks(query)));
+    updateQuery = (event) => {
+        this.setState({ query: event.target.value});
+        if (this.state.query && this.searchBoooks(this.state.query));
     }
 
     searchBoooks(query){
+
+        this.setState({error: ''});
+
         const MAX_RESULTS = 20;
         BooksAPI.search(query, MAX_RESULTS)
         .then(searchedBooks => {
-            this.setState({books: this.merge(searchedBooks, this.props.booksFromStands, "id")})
+
+            if(searchedBooks.error){
+                searchedBooks.error === 'empty query' ?
+                    this.setState({error: 'Pesquisa não gerou resultados'}) :
+                    this.setState({error: searchedBooks.error}) ;
+                searchedBooks = [];
+            }
+
+            this.setState({books: this.merge(searchedBooks, this.props.booksFromStands, "id")});
         })
     }
 
     handleSearch = ( book,shelf) => {
         if(this.props.onUpdateBook)
-            this.props.onUpdateBook(book, shelf)
+            this.props.onUpdateBook(book, shelf);
     }
 
+    /**
+    * @description Verifica os itens do array b no array e os substitui
+    * @param {array}  a
+    * @param {array}  b
+    * @returns {array} itens do a com substituição pelos itens de b se existirem
+    */
     merge = (a, b, prop) => {
         var reduced =  a.filter( aitem => ! b.find ( bitem => aitem[prop] === bitem[prop]) );
         return reduced.concat(b.filter(bitem => a.find(aitem => aitem[prop] === bitem[prop])));
     }
 
     render(){
-        const { query } = this.state;
-
         return (
             <div className="search-books">
               <div className="search-books-bar">
                 <Link className="close-search" to="/">Close</Link>
                 <div className="search-books-input-wrapper">
-                  {/*
-                    NOTES: The search from BooksAPI is limited to a particular set of search terms.
-                    You can find these search terms here:
-                    https://github.com/udacity/reactnd-project-myreads-starter/blob/master/SEARCH_TERMS.md
-
-                    However, remember that the BooksAPI.search method DOES search by title or author. So, don't worry if
-                    you don't find a specific author or title. Every search is limited by search terms.
-                  */}
-                  <input type="text" 
-                    placeholder="Search by title or author"
-                    value={query}
-                    onChange={(event) => this.updateQuery(event.target.value)}
-                  />
+                     <DebounceInput
+                        minLength={3}
+                        debounceTimeout={500}
+                        placeholder="Search by title or author"
+                        onChange={this.updateQuery} />
                 </div>
               </div>
               <div className="search-books-results">
+                {(this.state.error && 
+                    <div>
+                        <h3>{this.state.error}</h3>
+                    </div>
+                )}
                 <ol className="books-grid">
                     {this.state.books.length > 0 && (
                         <ListBooks 
